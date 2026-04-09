@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATE • Real-Time Clock &amp; Animations</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap');
+
+        :root {
+            --primary: #00f7ff;
+            --accent: #ff00aa;
+            --dark: #0a0a1f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: radial-gradient(circle at 50% 30%, #1a1a3a, var(--dark));
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Animated background stars */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            animation: stars 25s linear infinite;
+            opacity: 0.15;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes stars {
+            0% { background-position: 0 0; }
+            100% { background-position: 1000px 1000px; }
+        }
+
+        /* Subtle grid overlay */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0, 247, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(0, 247, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: grid-move 40s linear infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes grid-move {
+            0% { background-position: 0 0; }
+            100% { background-position: 60px 60px; }
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 2rem 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 247, 255, 0.2);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem;
+            font-weight: 500;
+            letter-spacing: -2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+        }
+
+        .logo::before {
+            content: '◉';
+            font-size: 1.8rem;
+            animation: pulse 2s infinite;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        .hero {
+            position: relative;
+            z-index: 2;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 5%;
+            text-align: center;
+        }
+
+        .content {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 500;
+            letter-spacing: -4px;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: title-glow 4s ease-in-out infinite alternate;
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            max-width: 600px;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        /* Clock Container */
+        .clock-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .clock {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            max-width: 480px;
+            background: rgba(10, 10, 31, 0.85);
+            border: 18px solid var(--primary);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 
+                0 0 60px var(--primary),
+                inset 0 0 40px rgba(0, 247, 255, 0.4),
+                0 30px 60px rgba(0, 0, 0, 0.6);
+            transition: all 0.4s ease;
+            animation: clock-pulse 8s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        /* Clock hands */
+        .hand {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0% 50%;
+            border-radius: 9999px;
+            box-shadow: 0 0 15px currentColor;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hour-hand {
+            width: 26%;
+            height: 14px;
+            background: #00ffaa;
+            transform: rotate(90deg); /* initial position */
+        }
+
+        .minute-hand {
+            width: 38%;
+            height: 9px;
+            background: #ffffff;
+            transform: rotate(90deg);
+        }
+
+        .second-hand {
+            width: 42%;
+            height: 4px;
+            background: var(--accent);
+            transform: rotate(90deg);
+            box-shadow: 0 0 25px #ff00aa;
+        }
+
+        /* Center dot */
+        .center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 32px;
+            height: 32px;
+            background: var(--dark);
+            border: 8px solid var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: 0 0 30px var(--primary);
+        }
+
+        /* Numbers */
+        .number {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 50% 50%;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 0 15px var(--primary);
+        }
+
+        .number span {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: block;
+        }
+
+        /* Digital display */
+        .digital {
+            margin-top: 2rem;
+            background: rgba(10, 10, 31, 0.7);
+            border-radius: 24px;
+            padding: 1.5rem 3rem;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 247, 255, 0.3);
+            box-shadow: 0 0 40px rgba(0, 247, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 380px;
+        }
+
+        .time {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 500;
+            letter-spacing: -2px;
+            color: var(--primary);
+            text-shadow: 0 0 30px var(--primary);
+            animation: digital-flicker 1.5s infinite alternate;
+        }
+
+        .date {
+            font-size: 1.4rem;
+            font-weight: 500;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .date::before,
+        .date::after {
+            content: '';
+            height: 2px;
+            width: 40px;
+            background: var(--accent);
+        }
+
+        /* Extra info bar */
+        .info-bar {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 247, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 247, 255, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 3rem 5%;
+            font-size: 0.95rem;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .clock { max-width: 320px; }
+            .digital { min-width: 300px; padding: 1rem 2rem; }
+            .time { font-size: 2.6rem; }
+        }
+
+        /* Keyframe animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes clock-pulse {
+            0%, 100% { box-shadow: 0 0 60px var(--primary), inset 0 0 40px rgba(0, 247, 255, 0.4); }
+            50% { box-shadow: 0 0 90px var(--primary), inset 0 0 60px rgba(0, 247, 255, 0.7); }
+        }
+
+        @keyframes title-glow {
+            from { filter: drop-shadow(0 0 20px var(--primary)); }
+            to { filter: drop-shadow(0 0 40px var(--accent)); }
+        }
+
+        @keyframes digital-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">DATE</div>
+        <nav>
+            <a href="#clock">Live Clock</a>
+            <a href="#date">Today's Date</a>
+            <a href="#animations">Animations</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 1rem; opacity: 0.8;">
+            <div style="width: 10px; height: 10px; background: #00ffaa; border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+            LIVE • REAL-TIME
+        </div>
+    </header>
+
+    <section class="hero" id="clock">
+        <div class="content">
+            <div>
+                <h1>THE DATE</h1>
+                <p class="tagline">Real-time clock • Beautiful animations • Pure HTML &amp; CSS magic</p>
+            </div>
+
+            <!-- Analog Clock -->
+            <div class="clock-wrapper">
+                <div class="clock" id="clock">
+                    <!-- Numbers will be added by JS -->
+                    <!-- Hands -->
+                    <div class="hand hour-hand" id="hour"></div>
+                    <div class="hand minute-hand" id="minute"></div>
+                    <div class="hand second-hand" id="second"></div>
+                    <!-- Center -->
+                    <div class="center"></div>
+                </div>
+            </div>
+
+            <!-- Digital Time & Date -->
+            <div class="digital" id="digital">
+                <div class="time" id="digital-time">00:00:00</div>
+                <div class="date" id="digital-date">Wednesday, April 8, 2026</div>
+            </div>
+
+            <div class="info-bar">
+                <div class="info-card">
+                    <span>📍</span>
+                    <span>Lagos, Nigeria • WAT</span>
+                </div>
+                <div class="info-card">
+                    <span>⚡</span>
+                    <span>Updates every second</span>
+                </div>
+                <div class="info-card">
+                    <span>🎨</span>
+                    <span>Smooth CSS animations</span>
+                </div>
+                <div class="info-card">
+                    <span>🌐</span>
+                    <span>Your browser's local time</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 6rem 5%; background: rgba(10,10,31,0.6); position: relative; z-index: 2;" id="date">
+        <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
+            <h2 style="font-size: 2.8rem; margin-bottom: 1rem; font-family: 'Space Grotesk', sans-serif;">What is “Date” today?</h2>
+            <p style="font-size: 1.3rem; max-width: 720px; margin: 0 auto 3rem; opacity: 0.85;">
+                Right now, your device shows the exact moment in time — captured live with smooth animations.<br>
+                Every second is a new frame. Every tick tells a story.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                <div style="background: rgba(255,255,255,0.07); padding: 2rem; border-radius: 20px; border: 1px solid rgba(0,247,255,0.2);">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">🕒</div>
+                    <h3>Real-Time Clock</h3>
+                    <p>The hands move in perfect sync with your device clock using only CSS transforms and JavaScript timing.</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.07); padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,0,170,0.2);">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">📅</div>
+                    <h3>Live Date Display</h3>
+                    <p>Weekday, month, day, and year update instantly. Formatted beautifully with Intl.DateTimeFormat.</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.07); padding: 2rem; border-radius: 20px; border: 1px solid rgba(0,247,255,0.2);">
+                    <div style="font-size: 3.5rem; margin-bottom: 1rem;">✨</div>
+                    <h3>CSS Animations</h3>
+                    <p>Glowing borders, pulsing shadows, flickering digital numbers, animated background grid, and smooth hand movement.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 6rem 5%; text-align: center; position: relative; z-index: 2;" id="animations">
+        <h2 style="font-size: 2.5rem; margin-bottom: 4rem; font-family: 'Space Grotesk', sans-serif;">Pure Animation Magic</h2>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 3rem; justify-content: center; align-items: center;">
+            <div style="text-align: center;">
+                <div style="width: 160px; height: 160px; background: linear-gradient(45deg, #00f7ff, #ff00aa); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; animation: rotate-slow 20s linear infinite;">
+                    <div style="width: 110px; height: 110px; background: #0a0a1f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🌀</div>
+                </div>
+                <p style="font-weight: 500;">Infinite rotation ring</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <div id="demo-bar" style="height: 30px; width: 300px; background: linear-gradient(90deg, transparent, var(--primary), transparent); margin: 0 auto 1rem; border-radius: 9999px; animation: scan 3s linear infinite;"></div>
+                <p style="font-weight: 500;">Scanning time bar</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; animation: bounce 1.8s infinite;">📆</div>
+                <p style="font-weight: 500;">Bouncing date icon</p>
+            </div>
+        </div>
+        
+        <p style="margin-top: 4rem; font-size: 1.1rem; max-width: 700px; margin-left: auto; margin-right: auto; opacity: 0.8;">
+            Built with <strong>only HTML + CSS + minimal JavaScript</strong> for real-time updates.<br>
+            No frameworks. No external images. Just pure web magic.
+        </p>
+    </section>
+
+    <footer>
+        <p>Made as a complete single-file demo • Copy &amp; save as <strong>index.html</strong> • Open in any browser</p>
+        <p style="margin-top: 1rem; font-size: 0.9rem;">The clock updates every second • Hands sweep smoothly • Everything is animated with CSS keyframes</p>
+    </footer>
+
+    <script>
+        // Main clock logic
+        function updateClock() {
+            const now = new Date();
+            
+            // Get time components
+            const seconds = now.getSeconds();
+            const minutes = now.getMinutes();
+            const hours = now.getHours();
+            
+            // Calculate degrees (with -90° offset so 0 points to 12 o'clock)
+            const secondDeg = (seconds * 6) - 90;
+            const minuteDeg = (minutes * 6) + (seconds * 0.1) - 90;
+            const hourDeg = ((hours % 12) * 30) + (minutes * 0.5) - 90;
+            
+            // Update hands
+            document.getElementById('second').style.transform = `rotate(${secondDeg}deg)`;
+            document.getElementById('minute').style.transform = `rotate(${minuteDeg}deg)`;
+            document.getElementById('hour').style.transform = `rotate(${hourDeg}deg)`;
+            
+            // Digital time
+            const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('digital-time').textContent = timeStr;
+            
+            // Digital date
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const dateStr = now.toLocaleDateString('en-US', dateOptions);
+            document.getElementById('digital-date').textContent = dateStr;
+        }
+        
+        // Generate clock numbers 1–12
+        function createNumbers() {
+            const clock = document.getElementById('clock');
+            for (let i = 1; i <= 12; i++) {
+                const numDiv = document.createElement('div');
+                numDiv.className = 'number';
+                numDiv.style.setProperty('--rotation', `${i * 30}deg`);
+                numDiv.innerHTML = `<span>${i}</span>`;
+                clock.appendChild(numDiv);
+            }
+        }
+        
+        // Start everything
+        function init() {
+            createNumbers();
+            updateClock(); // initial call
+            
+            // Update every second
+            setInterval(updateClock, 1000);
+            
+            console.log('%c✅ DATE website ready! Real-time clock + animations are live.', 'color:#00f7ff; font-size:13px; font-family:monospace');
+        }
+        
+        // Launch the site
+        window.onload = init;
+    </script>
+</body>
+</html>
